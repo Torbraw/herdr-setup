@@ -22,14 +22,16 @@ Before changing Herdr layouts, mods or keybindings, read `~/.config/herdr-app/AG
    ```
 
 4. Run `herdr-app check <mod-folder>` for changed mods, including the bundled usage copy when usage changes. When changing visuals, check the actual app render after an explicitly authorized install.
+5. Before committing visual changes, refresh each affected mod/layout bundle's `preview.png` and any layout-chooser copy. Shared mod changes require previews for both the standalone bundle and affected layouts.
+   Capture the actual app with fictional sidebar labels and no private terminal content. Inspect the images before staging; previews must match the changes being committed. If capture is blocked, report it before committing.
 
 ## Documentation
 
-- Routine UI tweaks are code-only. Update docs only when requested or when installation, requirements, commands, source paths or privacy/security guidance change.
+- Routine UI tweaks change code and required previews only. Update prose docs only when requested or when installation, requirements, commands, source paths or privacy/security guidance change.
 - Root README covers navigation and shared setup, not layout inventories or test implementation details. Package READMEs cover installation and usage, not cosmetic specifications.
 - Ship mods/layouts as-is. Keep styling in runtime code; add customization settings or DIY layout-editing examples only when requested.
 - Update THIRD_PARTY/LICENSES only when third-party sources, assets or licensing change.
-- Refresh recipes/previews only when requested. For captures, use fictional sidebar labels and check for private terminal content.
+- Recipes describe the shipped experience and essential behavior, not exact styling. Update them when features, workflows, dependencies or constraints materially change; leave them untouched for spacing, sizing, color and typography tweaks.
 
 ## Guardrails
 
