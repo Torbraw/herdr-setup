@@ -1,8 +1,8 @@
 """Read subscription usage. Credentials stay in memory; stdout contains usage only.
 
 Uses existing logins, never refreshes or rewrites credentials. Network requests
-go only to the providers' usage endpoints, cached for five minutes unless the
-person explicitly requests fresh usage.
+go only to the providers' usage endpoints, cached for one minute by default
+unless the person explicitly requests fresh usage.
 """
 
 import argparse
@@ -116,9 +116,9 @@ def provider(name, fetch):
         return {"provider": name, "state": "unavailable", "message": "Usage temporarily unavailable"}
 
 
-def main(refresh=False):
+def main(refresh=False, cache_seconds=60):
     cached = read_json(CACHE)
-    if not refresh and cached.get("version") == 2 and time.time() - cached.get("updated", 0) < 300:
+    if not refresh and cached.get("version") == 2 and time.time() - cached.get("updated", 0) < cache_seconds:
         print(json.dumps(cached))
         return
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
@@ -134,7 +134,16 @@ def main(refresh=False):
     print(json.dumps(result))
 
 
+def positive_seconds(value):
+    seconds = int(value)
+    if seconds <= 0:
+        raise argparse.ArgumentTypeError("Cache lifetime must be positive whole seconds.")
+    return seconds
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Read subscription usage without modifying logins.")
     parser.add_argument("--refresh", action="store_true", help="Bypass the usage cache and reread current logins.")
-    main(refresh=parser.parse_args().refresh)
+    parser.add_argument("--cache-seconds", type=positive_seconds, default=60, help="Usage cache lifetime in seconds (default: 60).")
+    args = parser.parse_args()
+    main(refresh=args.refresh, cache_seconds=args.cache_seconds)

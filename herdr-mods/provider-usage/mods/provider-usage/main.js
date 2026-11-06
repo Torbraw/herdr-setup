@@ -2,13 +2,15 @@ import { View, div, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { theme, exec, appHome, nextCommand } from "herdr";
 import { parseUsage, resetLabel } from "./model.js";
+import { refreshIntervalSeconds } from "./config.js";
 
 export default class ProviderUsage extends View {
   init(_props, cx) {
     this.rows = [];
     this.width = 320;
     this.refresh(cx);
-    cx.timer.every(300000, (cx) => this.refresh(cx));
+    // Fetch fresh on each tick: request latency can leave the previous cache just under its TTL.
+    cx.timer.every(refreshIntervalSeconds * 1000, (cx) => this.refresh(cx, true));
     cx.spawn(async (cx) => {
       for (;;) {
         if (await nextCommand() === "refresh") this.refresh(cx, true);
@@ -22,7 +24,7 @@ export default class ProviderUsage extends View {
     cx.notify();
     cx.spawn(async (cx) => {
       try {
-        const args = [`${appHome()}/mods/provider-usage/usage.py`];
+        const args = [`${appHome()}/mods/provider-usage/usage.py`, "--cache-seconds", String(refreshIntervalSeconds)];
         if (fresh) args.push("--refresh");
         const result = await exec("python3", args);
         if (result.code !== 0) throw new Error("Usage unavailable");

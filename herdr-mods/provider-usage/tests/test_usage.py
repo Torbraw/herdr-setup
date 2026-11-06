@@ -16,6 +16,35 @@ import usage
 
 
 class UsageTests(unittest.TestCase):
+    def test_cache_expiry_follows_default_and_configured_intervals(self):
+        cases = [(59, {}, False), (60, {}, True),
+                 (90, {"cache_seconds": 120}, False), (120, {"cache_seconds": 120}, True),
+                 (45, {"cache_seconds": 30}, True)]
+        for age, options, expired in cases:
+            with self.subTest(age=age, options=options), \
+                    tempfile.TemporaryDirectory(dir="/tmp/opencode") as directory:
+                cache = Path(directory) / "usage.json"
+                cached = {"version": 2, "updated": 1000 - age, "providers": []}
+                cache.write_text(json.dumps(cached))
+                output = io.StringIO()
+                unavailable = {"state": "unavailable", "message": "Not signed in"}
+                with patch.object(usage, "CACHE", cache), patch.object(usage.time, "time", return_value=1000), \
+                        patch.object(usage, "openai", return_value=unavailable) as openai, \
+                        patch.object(usage, "anthropic", return_value=unavailable) as anthropic, \
+                        contextlib.redirect_stdout(output):
+                    usage.main(**options)
+                result = json.loads(output.getvalue())
+                if expired:
+                    openai.assert_called_once_with()
+                    anthropic.assert_called_once_with()
+                    self.assertEqual(result["updated"], 1000)
+                    self.assertEqual(len(result["providers"]), 2)
+                else:
+                    openai.assert_not_called()
+                    anthropic.assert_not_called()
+                    self.assertEqual(result, cached)
+                self.assertEqual(json.loads(cache.read_text()), result)
+
     def test_manual_refresh_bypasses_cached_login_error_and_reads_new_credentials(self):
         with tempfile.TemporaryDirectory(dir="/tmp/opencode") as directory:
             home = Path(directory)

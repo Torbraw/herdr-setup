@@ -23,6 +23,10 @@ herdr-app do pane.split '{"direction":"down","mod":"provider-usage"}'
 
 Only the inner runtime folder is installed; docs, preview and tests stay here. If `provider-usage` already exists, review before overwriting. The minimalist-compact layout already includes it, so use that copy.
 
+## Refresh interval
+
+Usage refreshes every minute by default. Set `refreshIntervalSeconds` to a positive whole number in `mods/provider-usage/config.js` to change both polling and cache lifetime. Herdr hot-reloads the file on save. When developing in this repo, edit the standalone source and use `node scripts/dev.mjs` from the root to sync it live.
+
 ## Development
 
 Edit `mods/provider-usage/`. Run tests from this bundle directory:

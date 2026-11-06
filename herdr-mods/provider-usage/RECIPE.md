@@ -13,7 +13,7 @@ A compact Herdr panel showing Codex and Claude subscription usage: percentage ba
 
 ## How it behaves
 
-- Refreshes on initialization and every five minutes. Clicking the heading's right label asks the helper again, but a fresh five-minute cache avoids another provider request.
+- Refreshes on initialization and every minute by default. `config.js` controls both polling and cache lifetime; saving it hot-reloads the mod. Initial loads reuse a fresh cache; timer ticks and the `provider-usage.refresh` command bypass it and reread current logins.
 - Missing logins, expired tokens, rate limits and unavailable endpoints show concise messages. Credentials and HTTP response bodies never appear in errors.
 - It only reads usage; it cannot refresh authentication, log in, change plans or manage sessions.
 
@@ -21,7 +21,7 @@ A compact Herdr panel showing Codex and Claude subscription usage: percentage ba
 
 This bundle's runtime source is `mods/provider-usage/`. Copy only that inner folder to `mods/provider-usage/` under the Herdr home. Keep this installed name: `main.js` uses it for its Python helper and local SVG assets. No sibling mod is needed. Docs, preview and `tests/` stay outside the installed runtime folder.
 
-- `main.js` uses gpui-kit/gpui-base plus Herdr's `theme`, `exec` and `appHome`, a five-minute timer and size-change notifications.
+- `main.js` uses gpui-kit/gpui-base plus Herdr's `theme`, `exec` and `appHome`, a configurable timer from `config.js` (60 seconds by default) and size-change notifications.
 - `model.js` validates provider/window data, clamps percentages and formats reset estimates.
 - `usage.py` uses Python's standard library for local login reads, two concurrent HTTPS requests and a usage-only cache.
 - `openai.svg` and `anthropic.svg` are bundled locally; sources and terms are in [THIRD_PARTY.md](THIRD_PARTY.md) beside this recipe.
@@ -43,5 +43,5 @@ Install the supplied runtime folder as-is, then open it beside a terminal with `
 1. `herdr-app check` passes for the installed folder and the shown panel has no runtime errors.
 2. It renders independently with only the inner runtime folder installed; helper and icons require no workspace mod.
 3. Valid returned windows show clamped bars and correct reset formats; missing data gives an honest unavailable state.
-4. Refreshing within five minutes reuses cache; errors expose neither tokens nor response bodies.
+4. Initial loads reuse cache only within the configured interval; timer ticks and explicit refresh commands bypass it. Errors expose neither tokens nor response bodies.
 5. Model and Python tests pass; review the synced layout copy before publishing.
