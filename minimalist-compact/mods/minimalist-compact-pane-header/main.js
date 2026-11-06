@@ -26,9 +26,12 @@ function paneName(p) {
 function details(p, terminal, t) {
   const foreground = terminal?.foreground?.name ?? "";
   const shell = /^(?:bash|zsh|fish|sh|pwsh|powershell|nu)(?:\.exe)?$/.test(foreground.split(/[\\/]/).pop());
+  const path = folder(p.cwd);
+  const leaf = path.replace(/[\\/]+$/, "").split(/[\\/]/).pop() || path;
   return {
-    name: shell ? foreground : paneName(p),
-    pic: shell ? svg("icons/shell.svg").size(14).text_color(t.dim) : icon(p.program, 14, t.dim),
+    name: shell ? leaf || foreground : paneName(p),
+    context: shell ? foreground : path,
+    pic: shell ? svg("icons/shell.svg").size(14).text_color(t.muted) : icon(p.program, 14, t.muted),
     status: shell ? null : p.status,
   };
 }
@@ -59,15 +62,16 @@ export default class MinimalistCompactPaneHeader extends View {
     const p = this.me();
     if (!p) return div();
     const terminal = terminals().find(item => item.address === p.terminal);
-    const { name, pic, status } = details(p, terminal, t);
+    const { name, context, pic, status } = details(p, terminal, t);
     const pane = p.pane;
     return h_flex()
       .id(`pane-head-${pane}`)
       .size_full()
+      .min_w(0)
       .px(10)
       .gap(8)
       .items_center()
-      .bg(t.background)
+      .bg(t.chrome)
       .border_b(1)
       .border_color(t.border)
       .text_size(12)
@@ -77,8 +81,8 @@ export default class MinimalistCompactPaneHeader extends View {
       .when(status === "blocked", el => el.child(div().flex_none().px(6).h(18).flex().items_center().rounded(5).bg(t.blocked + "26").text_size(10.5).font_semibold().text_color(t.blocked).child("Needs you")))
       .when(status === "done", el => el.child(div().size(7).flex_none().rounded(4).bg(t.done)))
       .when(Boolean(pic), (el) => el.child(pic))
-      .child(div().flex_none().truncate().max_w(260).font_medium().text_color(t.foreground).child(name))
-      .child(div().flex_1().truncate().text_color(t.dim).child(folder(p.cwd)))
+      .child(div().min_w(0).truncate().max_w(260).font_medium().text_color(t.foreground).tooltip(p.title).child(name))
+      .child(div().flex_1().min_w(0).truncate().text_color(t.muted).tooltip(folder(p.cwd)).child(context))
       .when(this.hovered, el => el
         .child(this.button(t, `ph-r-${pane}`, "split-right", "pane.split", { direction: "right", pane }))
         .child(this.button(t, `ph-d-${pane}`, "split-down", "pane.split", { direction: "down", pane }))

@@ -89,17 +89,17 @@
                     "height": 26,
                     "position": "top"
                   },
-                  "background": "background",
+                  "background": "chrome",
                   "border": {
-                    "width": 0,
+                    "width": 1,
                     "color": "border"
                   },
                   "focus": {
-                    "width": 0,
-                    "color": "border"
+                    "width": 1,
+                    "color": "input"
                   },
                   "radius": 0,
-                  "gap": 0,
+                  "gap": 4,
                   "lone": true
                 }
               }
@@ -156,6 +156,7 @@
     }
   ],
   "background": "canvas",
+  "terminal_opacity": 0,
   "terminal_padding": [
     0,
     0
