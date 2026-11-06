@@ -5,6 +5,7 @@
     "version": "0.1.13"
   },
   "type": "row",
+  "preview": "layouts/minimalist-compact.png",
   "children": [
     {
       "id": "sidebar",

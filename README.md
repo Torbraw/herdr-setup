@@ -9,7 +9,7 @@ A compact [Herdr](https://herdr.dev) layout with workspaces and worktrees, inlin
 Requires a recent Herdr app (built from its 0.1.13 layout/mod API), Python 3 and Git. Give an agent this repository and ask it to install the layout using `RECIPE.md`, or copy the files yourself:
 
 1. Clone the repo.
-2. Copy `layouts/minimalist-compact.json` and the six `mods/minimalist-compact-*` folders into `~/.config/herdr-app/` (or `$HERDR_APP_HOME`). If these names already exist, review the differences before replacing them.
+2. Copy `layouts/minimalist-compact.json`, `layouts/minimalist-compact.png` and the six `mods/minimalist-compact-*` folders into `~/.config/herdr-app/` (or `$HERDR_APP_HOME`). If these names already exist, review the differences before replacing them.
 3. Check the mods and select the layout:
 
    ```sh
