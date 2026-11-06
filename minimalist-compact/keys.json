@@ -1,0 +1,5 @@
+{
+  "layout:minimalist-compact": {
+    "ctrl-shift-r": "provider-usage.refresh"
+  }
+}

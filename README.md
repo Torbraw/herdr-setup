@@ -7,7 +7,7 @@ A compact [Herdr](https://herdr.dev) layout and reusable mods.
 
 ## Layout
 
-**[minimalist-compact](minimalist-compact/RECIPE.md)** — Compact workspaces/worktrees, inline branches, agent session dots, subscription usage and screenshot mode. Self-contained with all six mods.
+**[minimalist-compact](minimalist-compact/RECIPE.md)** — A compact Herdr layout.
 
 ![minimalist-compact with sample sidebar names](minimalist-compact/preview.png)
 

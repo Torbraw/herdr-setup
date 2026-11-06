@@ -31,7 +31,7 @@
         {
           "id": "provider-usage",
           "type": "block",
-          "size": { "px": 148 },
+          "size": { "px": 96 },
           "content": { "mod": "provider-usage" }
         },
         {

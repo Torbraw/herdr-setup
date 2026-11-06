@@ -1,8 +1,11 @@
+import contextlib
+import io
 import json
 import os
 import sqlite3
 import sys
 import tempfile
+import time
 import unittest
 import urllib.error
 from pathlib import Path
@@ -13,6 +16,38 @@ import usage
 
 
 class UsageTests(unittest.TestCase):
+    def test_manual_refresh_bypasses_cached_login_error_and_reads_new_credentials(self):
+        with tempfile.TemporaryDirectory(dir="/tmp/opencode") as directory:
+            home = Path(directory)
+            cache = home / "usage.json"
+            cached = {"version": 2, "updated": time.time(), "providers": [
+                {"provider": "anthropic", "state": "unavailable", "message": "Login expired"}]}
+            cache.write_text(json.dumps(cached))
+            credentials = home / ".claude/.credentials.json"
+            credentials.parent.mkdir()
+            credentials.write_text(json.dumps({"claudeAiOauth": {"accessToken": "new-login-fixture"}}))
+            payload = {"five_hour": {"utilization": 12, "resets_at": None}}
+            output = io.StringIO()
+            with patch.object(usage, "HOME", home), patch.object(usage, "CACHE", cache), \
+                    patch.object(usage, "openai", return_value={"state": "unavailable", "message": "Not signed in"}), \
+                    patch.object(usage, "request", return_value=payload) as request:
+                with contextlib.redirect_stdout(output):
+                    usage.main()
+                self.assertEqual(json.loads(output.getvalue()), cached)
+                request.assert_not_called()
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    usage.main(refresh=True)
+                request.assert_called_once_with("https://api.anthropic.com/api/oauth/usage", "new-login-fixture",
+                                                {"anthropic-beta": "oauth-2025-04-20"})
+            result = json.loads(output.getvalue())
+            claude = next(row for row in result["providers"] if row["provider"] == "anthropic")
+            self.assertEqual(claude["state"], "ready")
+            self.assertEqual(claude["windows"][0]["used"], 12)
+            self.assertEqual(json.loads(cache.read_text()), result)
+            self.assertEqual(credentials.read_text(), json.dumps({"claudeAiOauth": {"accessToken": "new-login-fixture"}}))
+            self.assertNotIn("new-login-fixture", cache.read_text())
+
     def test_v2_default_connection_with_null_active_uses_refreshed_credentials(self):
         with tempfile.TemporaryDirectory(dir="/tmp/opencode") as directory:
             database = Path(directory) / "login.db"

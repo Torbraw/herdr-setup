@@ -7,9 +7,9 @@ A compact Herdr panel showing Codex and Claude subscription usage: percentage ba
 ## What you see
 
 - A theme-chrome block headed “Subscription usage”, with a clickable refresh label at the right.
-- Codex and Claude sections stacked with 8px gaps, provider icons and 12.5px names. Each returned window has a 19px row: label, thin percentage bar, rounded percentage and reset estimate. Metadata uses 11.5px text.
-- Horizontal padding 16px, top 8px, bottom 12px, with a thin theme-border top separator. A 148px-high block fits the illustrated windows; allow more room if providers return more windows.
-- Bars use muted text color, switching to the theme's blocked color at 90%. Below 160px wide the panel becomes an empty rail. No fabricated windows or reset times.
+- Codex and Claude icons/names beside compact usage meters: window label, percentage bar, rounded percentage and reset estimate.
+- A thin theme-border top separator. Spacing and typography are supplied by the mod, with no configuration required.
+- Bars use muted text color, switching to the theme's blocked color at 90%. The panel hides its content when too narrow. No fabricated windows or reset times.
 
 ## How it behaves
 
@@ -27,18 +27,7 @@ This bundle's runtime source is `mods/provider-usage/`. Copy only that inner fol
 - `openai.svg` and `anthropic.svg` are bundled locally; sources and terms are in [THIRD_PARTY.md](THIRD_PARTY.md) beside this recipe.
 - `mod.json` uses `place: none`; installing the files does not alter the selected layout.
 
-Open it beside a terminal with `pane.split {direction: "down", mod: "provider-usage"}`. To integrate a compact meter above an existing sidebar footer, add this block to a custom layout's sidebar column:
-
-```json
-{
-  "id": "provider-usage",
-  "type": "block",
-  "size": { "px": 148 },
-  "content": { "mod": "provider-usage" }
-}
-```
-
-Clone shipped layouts before modifying them. Preserve the person's existing controls and layout. The minimalist-compact bundle already includes the same mod; install only one copy at that name.
+Install the supplied runtime folder as-is, then open it beside a terminal with `pane.split {direction: "down", mod: "provider-usage"}`. The minimalist-compact bundle already includes and places the same mod; install only one copy at that name.
 
 ## Watch out
 

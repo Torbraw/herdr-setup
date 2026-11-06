@@ -1,9 +1,11 @@
 """Read subscription usage. Credentials stay in memory; stdout contains usage only.
 
 Uses existing logins, never refreshes or rewrites credentials. Network requests
-go only to the providers' usage endpoints, at most once every five minutes.
+go only to the providers' usage endpoints, cached for five minutes unless the
+person explicitly requests fresh usage.
 """
 
+import argparse
 import concurrent.futures
 import json
 import math
@@ -114,9 +116,9 @@ def provider(name, fetch):
         return {"provider": name, "state": "unavailable", "message": "Usage temporarily unavailable"}
 
 
-def main():
+def main(refresh=False):
     cached = read_json(CACHE)
-    if cached.get("version") == 2 and time.time() - cached.get("updated", 0) < 300:
+    if not refresh and cached.get("version") == 2 and time.time() - cached.get("updated", 0) < 300:
         print(json.dumps(cached))
         return
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
@@ -133,4 +135,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Read subscription usage without modifying logins.")
+    parser.add_argument("--refresh", action="store_true", help="Bypass the usage cache and reread current logins.")
+    main(refresh=parser.parse_args().refresh)

@@ -21,7 +21,7 @@ herdr-app check "${HERDR_APP_HOME:-$HOME/.config/herdr-app}/mods/provider-usage"
 herdr-app do pane.split '{"direction":"down","mod":"provider-usage"}'
 ```
 
-Only the inner runtime folder is installed; docs, preview and tests stay here. If `provider-usage` already exists, review before overwriting. The minimalist-compact layout already includes it, so use that copy. For a compact sidebar block, see the [recipe](RECIPE.md).
+Only the inner runtime folder is installed; docs, preview and tests stay here. If `provider-usage` already exists, review before overwriting. The minimalist-compact layout already includes it, so use that copy.
 
 ## Development
 
