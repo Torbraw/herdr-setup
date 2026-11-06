@@ -116,7 +116,9 @@ export default class MinimalistCompactWorkspaces extends Spaces {
         .child(h_flex().h(14).gap(4).items_center().text_size(11).text_color(t.muted)
           .child(svg(`icons/${row.harness === "cursor-agent" ? "cursor" : row.harness}.svg`).size(10).flex_none())
           .child(div().flex_none().child(harness))
-          .when(Boolean(family), (el) => el.child(svg(`mods/minimalist-compact-workspaces/${family}.svg`).size(10).ml(2).flex_none().tooltip(family === "openai" ? "OpenAI model" : "Anthropic model")))
+          .when(Boolean(family), (el) => el.child(div().size(10).ml(2).flex_none()
+            .tooltip(family === "openai" ? "OpenAI model" : "Anthropic model")
+            .child(svg(`mods/minimalist-compact-workspaces/${family}.svg`).size(10))))
           .when(Boolean(row.model), (el) => el.child(div().min_w(0).truncate().child(row.model)))));
   }
 
