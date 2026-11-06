@@ -1,9 +1,10 @@
 import { div, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { agents, terminals, panes, spaces, theme, run, openOverlay, setAgentOrder, shared, setShared } from "herdr";
+import { agents, terminals, panes, spaces, theme, run, openOverlay, setAgentOrder, shared, setShared, nextCommand } from "herdr";
 import Spaces from "./spaces-base.js";
 import { frontend, providerFamily, sessionStatus } from "./model.js";
 import { OpenCodeBridge } from "./opencode-bridge.js";
+import { ScreenshotNames, screenshotMode } from "./screenshot.js";
 
 const HARNESS = { opencode: "OpenCode", claude: "Claude Code", codex: "Codex", pi: "Pi" };
 const STATUS = { working: "Working", blocked: "Waiting for input", done: "Done", idle: "Idle" };
@@ -28,6 +29,14 @@ export default class MinimalistCompactWorkspaces extends Spaces {
     this.width = 320;
     this.bridge = new OpenCodeBridge();
     this.bridge.start(cx);
+    this.screenshot = false;
+    this.previewNames = new ScreenshotNames();
+    cx.spawn(async (cx) => {
+      for (;;) {
+        this.screenshot = screenshotMode(await nextCommand(), this.screenshot);
+        cx.notify();
+      }
+    });
   }
 
   sessionRows(space) {
@@ -72,32 +81,39 @@ export default class MinimalistCompactWorkspaces extends Spaces {
       .child(svg(`mods/workspace-chrome/${icon}.svg`).size(12));
   }
 
-  spaceHeader({ w, g, tree }, t) {
-    const branch = g?.branch ?? w.branch;
+  labels({ w, g, tree }) {
+    return this.previewNames.workspace({ id: w.id, name: w.name, folder: w.folder,
+      branch: g?.branch ?? w.branch, worktree: Boolean(tree) }, this.screenshot);
+  }
+
+  spaceHeader(entry, t) {
+    const { w, tree } = entry;
+    const { name, branch, folder } = this.labels(entry);
     return h_flex().id(`workspace-${w.id}`).h(24).px(5).gap(6).items_center().rounded(4)
       .when(w.active, (el) => el.bg(t.selected)).hover((el) => el.bg(t.hover))
       .on_click(() => run("space.select", { id: w.id })).on_mouse_down("right", () => this.menu(w))
       .child(svg(`mods/workspace-chrome/${tree ? "branch" : "folder"}.svg`).size(12).flex_none().text_color(t.muted))
       .child(div().max_w(150).min_w(0).truncate().font_semibold().text_size(13).text_color(t.foreground)
-        .tooltip([w.folder, branch ? `Branch: ${branch}` : ""].filter(Boolean).join("\n")).child(w.name))
-      .when(Boolean(branch) && branch !== w.name, (el) => el.child(
+        .tooltip([folder, branch ? `Branch: ${branch}` : ""].filter(Boolean).join("\n")).child(name))
+      .when(Boolean(branch) && branch !== name, (el) => el.child(
         h_flex().flex_1().min_w(0).gap(4).items_center().text_color(t.dim).tooltip(`Branch: ${branch}`)
           .child(svg("mods/workspace-chrome/git-branch.svg").size(10).flex_none())
           .child(div().min_w(0).truncate().text_size(11.5).child(branch))));
   }
 
   sessionRow(row, indent, t) {
+    const title = this.screenshot ? this.previewNames.name("session", `${row.address}:${row.id}`) : row.title;
     const family = providerFamily(row.provider, row.model);
     const harness = HARNESS[row.harness] ?? row.harness;
     const detail = [harness, row.model, STATUS[row.status]].filter(Boolean).join(" / ");
     return h_flex().id(`session-${row.address}-${row.id}`).h(32).pl(indent + 6).pr(4.5).gap(4).items_center().rounded(4)
       .when(row.focused, (el) => el.bg(t.raised)).hover((el) => el.bg(t.hover))
-      .tooltip(`${row.title}\n${detail}`).on_click((_e, cx) => this.openSession(row, cx))
+      .tooltip(`${title}\n${detail}`).on_click((_e, cx) => this.openSession(row, cx))
       .on_mouse_down("right", () => openOverlay({ mod: "menu", kind: "popup", width: 200,
         props: { tab: "tab", target: { id: row.tab.id } } }))
       .child(div().w(12).flex_none().child(stateIcon(row.status, t)))
       .child(v_flex().flex_1().min_w(0).gap(0)
-        .child(div().h(16).min_w(0).truncate().text_size(13).text_color(row.focused ? t.foreground : t.muted).child(row.title))
+        .child(div().h(16).min_w(0).truncate().text_size(13).text_color(row.focused ? t.foreground : t.muted).child(title))
         .child(h_flex().h(14).gap(4).items_center().text_size(11).text_color(t.muted)
           .child(svg(`icons/${row.harness === "cursor-agent" ? "cursor" : row.harness}.svg`).size(10).flex_none())
           .child(div().flex_none().child(harness))
@@ -116,7 +132,7 @@ export default class MinimalistCompactWorkspaces extends Spaces {
 
   compact(entry, t) {
     return h_flex().id(`compact-${entry.w.id}`).h(24).justify_center().gap(3).items_center()
-      .when(entry.w.active, (el) => el.bg(t.selected)).tooltip(entry.w.name)
+      .when(entry.w.active, (el) => el.bg(t.selected)).tooltip(this.labels(entry).name)
       .on_click(() => run("space.select", { id: entry.w.id }))
       .child(div().text_color(t.muted).child(String(entry.i + 1)));
   }

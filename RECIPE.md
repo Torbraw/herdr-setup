@@ -2,6 +2,8 @@
 
 A compact coding workspace for Herdr: worktrees grouped under repositories, OpenCode sessions immediately visible, and small usage meters above Settings.
 
+![minimalist-compact with sample sidebar names](preview.png)
+
 ## What you see
 
 - A fixed 330px sidebar: Herdr brand/search/sidebar controls, Workspaces heading with working count and add-space control, a scrolling tree, subscription usage, then Settings/Add machine.
@@ -21,6 +23,7 @@ A compact coding workspace for Herdr: worktrees grouped under repositories, Open
 - OpenCode tab closing uses OpenCode itself: Ctrl+X then W with its default bindings. This layout does not override keys.
 - The usage heading can refresh cached data; provider network requests are cached for five minutes. Missing logins or errors show concise unavailable messages.
 - Pane and terminal-tab controls use native Herdr commands. The sidebar can become a narrow rail through the brand control; individual workspace groups never collapse.
+- Screenshot mode (`minimalist-compact-workspaces.screenshot-on`, `screenshot-off`, `screenshot-toggle`) substitutes sidebar labels and their tooltips with stable sample names. It preserves real IDs, actions, grouping, status and models, and resets on reload. Use a blank OpenCode tab for the capture; terminal content and other panels remain live.
 
 ## Built from
 

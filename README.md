@@ -2,6 +2,8 @@
 
 A compact [Herdr](https://herdr.dev) layout with workspaces and worktrees, inline branches, agent sessions, and subscription usage.
 
+![minimalist-compact with sample sidebar names](preview.png)
+
 ## Install
 
 Requires a recent Herdr app (built from its 0.1.13 layout/mod API), Python 3 and Git. Give an agent this repository and ask it to install the layout using `RECIPE.md`, or copy the files yourself:
@@ -30,10 +32,24 @@ Install [herdr-app-bridge](https://github.com/Torbraw/opencode-herdr-app-bridge)
 - Credentials remain local; the usage cache contains only usage information. Missing/expired logins display an unavailable state. Provider endpoints and login formats may change.
 - The optional bridge exchanges local session metadata through Herdr's `data/herdr-app-bridge` directory.
 
+## Screenshot mode
+
+With this layout selected, replace sidebar workspace, worktree, branch and session labels with stable sample names:
+
+```sh
+herdr-app do minimalist-compact-workspaces.screenshot-on
+herdr-app shot preview.png
+herdr-app do minimalist-compact-workspaces.screenshot-off
+```
+
+`screenshot-toggle` also switches modes. Real names, focus targets and sessions stay intact; icons, models, status dots, grouping and spacing stay live. Sidebar label tooltips use sample names too. Mode resets on mod reload.
+
+This masks sidebar labels only. Select a blank OpenCode tab before capturing; terminal content, pane/tab headers, menus, remote-machine headings and Files/Changes remain live.
+
 ## Checks
 
 ```sh
-node --test mods/minimalist-compact-workspaces/model.test.mjs mods/minimalist-compact-provider-usage/model.test.mjs
+node --test mods/minimalist-compact-workspaces/*.test.mjs mods/minimalist-compact-provider-usage/model.test.mjs
 python3 -m unittest discover -s mods/minimalist-compact-provider-usage -p 'test_*.py'
 ```
 
