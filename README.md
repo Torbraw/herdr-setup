@@ -1,7 +1,7 @@
 # herdr-setup
 
 > [!NOTE]
-> This project is vibe-coded.
+> This project is vibe-coded with some human review but not much
 
 A compact [Herdr](https://herdr.dev) layout and reusable mods.
 
