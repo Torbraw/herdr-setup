@@ -17,8 +17,8 @@ import usage
 
 class UsageTests(unittest.TestCase):
     def test_cache_expiry_follows_default_and_configured_intervals(self):
-        cases = [(59, {}, False), (60, {}, True),
-                 (90, {"cache_seconds": 120}, False), (120, {"cache_seconds": 120}, True),
+        cases = [(119, {}, False), (120, {}, True),
+                 (150, {"cache_seconds": 180}, False), (180, {"cache_seconds": 180}, True),
                  (45, {"cache_seconds": 30}, True)]
         for age, options, expired in cases:
             with self.subTest(age=age, options=options), \

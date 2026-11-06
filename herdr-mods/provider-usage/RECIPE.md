@@ -13,7 +13,7 @@ A compact Herdr panel showing Codex and Claude subscription usage: percentage ba
 
 ## How it behaves
 
-- Refreshes on initialization and every minute by default. `config.js` controls both polling and cache lifetime; saving it hot-reloads the mod. Initial loads reuse a fresh cache; timer ticks and the `provider-usage.refresh` command bypass it and reread current logins.
+- Refreshes on initialization and every two minutes by default. `config.js` controls both polling and cache lifetime; saving it hot-reloads the mod. Initial loads reuse a fresh cache; timer ticks and the `provider-usage.refresh` command bypass it and reread current logins.
 - Missing logins, expired tokens, rate limits and unavailable endpoints show concise messages. Credentials and HTTP response bodies never appear in errors.
 - It only reads usage; it cannot refresh authentication, log in, change plans or manage sessions.
 
@@ -21,7 +21,7 @@ A compact Herdr panel showing Codex and Claude subscription usage: percentage ba
 
 This bundle's runtime source is `mods/provider-usage/`. Copy only that inner folder to `mods/provider-usage/` under the Herdr home. Keep this installed name: `main.js` uses it for its Python helper and local SVG assets. No sibling mod is needed. Docs, preview and `tests/` stay outside the installed runtime folder.
 
-- `main.js` uses gpui-kit/gpui-base plus Herdr's `theme`, `exec` and `appHome`, a configurable timer from `config.js` (60 seconds by default) and size-change notifications.
+- `main.js` uses gpui-kit/gpui-base plus Herdr's `theme`, `exec` and `appHome`, a configurable timer from `config.js` (120 seconds by default) and size-change notifications.
 - `model.js` validates provider/window data, clamps percentages and formats reset estimates.
 - `usage.py` uses Python's standard library for local login reads, two concurrent HTTPS requests and a usage-only cache.
 - `openai.svg` and `anthropic.svg` are bundled locally; sources and terms are in [THIRD_PARTY.md](THIRD_PARTY.md) beside this recipe.
