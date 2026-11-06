@@ -11,11 +11,12 @@
 
 1. Edit provider usage in `herdr-mods/provider-usage/mods/provider-usage/`, then run `node scripts/sync-provider-usage.mjs`. It overwrites runtime source copies in the layout bundle, leaves bundle docs/tests/previews outside the copy and never deletes. Remove retired files from both copies explicitly; review `git diff`.
 2. Edit other layout mods directly in `minimalist-compact/mods/`.
+   For authorized live testing, `node scripts/dev.mjs` syncs repo → bundle → installed runtime and watches; `--once` applies once. Read root README's local-development section before running either. Keep edits repo-first; stop on installed conflicts and preserve local changes before resolving.
 3. Update each affected package's recipe, installation instructions and attribution when behavior, paths or artwork change. Refresh previews deliberately; use fictional sidebar labels and check for private terminal content.
 4. Run behavioral tests from the root:
 
    ```sh
-    node --test minimalist-compact/mods/minimalist-compact-workspaces/*.test.mjs herdr-mods/provider-usage/tests/*.test.mjs
+    node --test tests/*.test.mjs minimalist-compact/mods/minimalist-compact-workspaces/*.test.mjs herdr-mods/provider-usage/tests/*.test.mjs
     python3 -m unittest discover -s herdr-mods/provider-usage/tests -p 'test_*.py'
    ```
 
