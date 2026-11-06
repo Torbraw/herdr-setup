@@ -16,7 +16,7 @@ from pathlib import Path
 
 HOME = Path.home()
 APP = Path(os.environ.get("HERDR_APP_HOME", HOME / ".config/herdr-app"))
-CACHE = APP / "data/minimalist-compact-provider-usage.json"
+CACHE = APP / "data/provider-usage.json"
 
 
 def read_json(path):
@@ -34,7 +34,7 @@ def window(label, used, reset):
 
 
 def request(url, token, headers):
-    headers = {**headers, "Authorization": f"Bearer {token}", "User-Agent": "minimalist-compact-provider-usage/1"}
+    headers = {**headers, "Authorization": f"Bearer {token}", "User-Agent": "provider-usage/1"}
     req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=12) as response:
         value = json.load(response)

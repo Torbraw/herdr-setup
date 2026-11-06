@@ -33,14 +33,14 @@ Six custom mods:
 
 - `minimalist-compact-workspace-chrome`: brand and footer, selected by `props.footer`.
 - `minimalist-compact-workspaces`: foreground-filtered agent sessions, grouped spaces/worktrees, inline branches, optional bridge reader.
-- `minimalist-compact-provider-usage`: provider bars and Python usage reader.
+- `provider-usage`: shared provider bars and Python usage reader, also installable independently.
 - `minimalist-compact-terminal-tabs`: native Herdr tabs, panel controls and window controls.
 - `minimalist-compact-pane-header`: pane titles, folders and split/zoom/close controls using `props.pane`.
 - `minimalist-compact-session-status`: native workspace/branch summary and custom session/working counts.
 
 The mods use gpui-kit/gpui-base and Herdr's live `spaces`, `panes`, `agents`, `terminals`, `theme`, `shared`, `run`, overlays, `exec`, `hc`, file APIs and folder watchers. The inherited spaces implementation handles Git grouping and remote machines. Only foreground coding-agent processes qualify, so stale OSC state cannot resurrect exited agents.
 
-Shipped dependencies remain Herdr's: Files, Changes, menus, worktree picker, settings, new-menu, program icons and workspace-chrome SVG assets. The cloned chrome includes its own asset copies. Provider artwork comes from Simple Icons and OpenAI's official brand assets; see `THIRD_PARTY.md` for sources.
+Shipped dependencies remain Herdr's: Files, Changes, menus, worktree picker, settings, new-menu, program icons and workspace-chrome SVG assets. The cloned chrome includes its own asset copies. Provider artwork comes from Simple Icons and OpenAI's official brand assets; see [THIRD_PARTY.md](THIRD_PARTY.md) for sources.
 
 The optional `herdr-app-bridge` OpenCode V2 plugin is a separate repository. It publishes version-1 PID/terminal-matched JSON snapshots and watches focus-request mailboxes in `data/herdr-app-bridge`. Reactive, coalesced writes avoid heartbeat polling. Herdr watches that directory; only failed watches use a 30-second fallback.
 

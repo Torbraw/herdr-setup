@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseUsage, resetLabel } from "./model.js";
+import { parseUsage, resetLabel } from "../mods/provider-usage/model.js";
 
 test("malformed usage is rejected, over-limit values cannot overflow the meter", () => {
   const result = parseUsage({ updated: 10, providers: [

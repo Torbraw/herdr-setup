@@ -1,12 +1,14 @@
 import json
 import os
 import sqlite3
+import sys
 import tempfile
 import unittest
 import urllib.error
 from pathlib import Path
 from unittest.mock import patch
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "mods/provider-usage"))
 import usage
 
 

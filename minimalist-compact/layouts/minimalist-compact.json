@@ -29,10 +29,10 @@
           "min": 90
         },
         {
-          "id": "minimalist-compact-provider-usage",
+          "id": "provider-usage",
           "type": "block",
           "size": { "px": 148 },
-          "content": { "mod": "minimalist-compact-provider-usage" }
+          "content": { "mod": "provider-usage" }
         },
         {
           "id": "sidebar-footer",

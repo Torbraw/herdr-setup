@@ -3,7 +3,7 @@ import { h_flex, v_flex } from "gpui-base";
 import { theme, exec, appHome } from "herdr";
 import { parseUsage, resetLabel } from "./model.js";
 
-export default class MinimalistCompactProviderUsage extends View {
+export default class ProviderUsage extends View {
   init(_props, cx) {
     this.rows = [];
     this.width = 320;
@@ -16,7 +16,7 @@ export default class MinimalistCompactProviderUsage extends View {
     this.busy = true;
     cx.spawn(async (cx) => {
       try {
-        const result = await exec("python3", [`${appHome()}/mods/minimalist-compact-provider-usage/usage.py`]);
+        const result = await exec("python3", [`${appHome()}/mods/provider-usage/usage.py`]);
         if (result.code !== 0) throw new Error("Usage unavailable");
         const data = parseUsage(JSON.parse(result.stdout));
         if (!data) throw new Error("Invalid usage response");
@@ -45,7 +45,7 @@ export default class MinimalistCompactProviderUsage extends View {
     const name = row.provider === "openai" ? "Codex" : "Claude";
     return v_flex().gap(2)
       .child(h_flex().gap(7).items_center().text_size(12.5).text_color(t.muted)
-        .child(svg(`mods/minimalist-compact-workspaces/${row.provider}.svg`).size(13).flex_none())
+        .child(svg(`mods/provider-usage/${row.provider}.svg`).size(13).flex_none())
         .child(name))
       .when(row.state === "ready", (el) => el.children(row.windows.map((window) => this.meter(window, t))))
       .when(row.state !== "ready", (el) => el.child(div().pl(20).text_size(11.5).text_color(t.dim).child(row.message)));
@@ -55,7 +55,7 @@ export default class MinimalistCompactProviderUsage extends View {
     const t = theme();
     if (this.width < 160) return div().id("usage-rail").size_full()
       .on_size_change((size, cx) => { this.width = size.width; cx.notify(); });
-    return v_flex().id("minimalist-compact-provider-usage").size_full().px(16).pt(8).pb(12).gap(8).bg(t.chrome)
+    return v_flex().id("provider-usage").size_full().px(16).pt(8).pb(12).gap(8).bg(t.chrome)
       .border_t(1).border_color(t.border)
       .on_size_change((size, cx) => { this.width = size.width; cx.notify(); })
       .child(h_flex().justify_between().items_center().text_size(11.5).text_color(t.dim)
