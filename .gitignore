@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.d.ts
+jsconfig.json
+node_modules/
+data/
+layouts/.state/
+settings.json
+view.json
+shared.json
+*.error
+.DS_Store
