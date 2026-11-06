@@ -19,6 +19,20 @@ function folder(cwd) {
   return cwd === h ? "~" : cwd.startsWith(h + "/") ? "~" + cwd.slice(h.length) : cwd;
 }
 
+function paneName(p) {
+  return ((p.program?.agent || p.program?.shell) && p.program.name) || p.title || p.program?.name || "shell";
+}
+
+function details(p, terminal, t) {
+  const foreground = terminal?.foreground?.name ?? "";
+  const shell = /^(?:bash|zsh|fish|sh|pwsh|powershell|nu)(?:\.exe)?$/.test(foreground.split(/[\\/]/).pop());
+  return {
+    name: shell ? foreground : paneName(p),
+    pic: shell ? svg("icons/shell.svg").size(14).text_color(t.dim) : icon(p.program, 14, t.dim),
+    status: shell ? null : p.status,
+  };
+}
+
 export default class MinimalistCompactPaneHeader extends View {
   init() { this.hovered = false; }
 
@@ -45,11 +59,7 @@ export default class MinimalistCompactPaneHeader extends View {
     const p = this.me();
     if (!p) return div();
     const terminal = terminals().find(item => item.address === p.terminal);
-    const foreground = terminal?.foreground?.name ?? "";
-    const shell = /^(?:bash|zsh|fish|sh|pwsh|powershell|nu)(?:\.exe)?$/.test(foreground.split(/[\\/]/).pop());
-    const name = shell ? foreground : ((p.program?.agent || p.program?.shell) && p.program.name) || p.title || p.program?.name || "shell";
-    const pic = shell ? svg("icons/shell.svg").size(14).text_color(t.dim) : icon(p.program, 14, t.dim);
-    const st = shell ? null : p.status;
+    const { name, pic, status } = details(p, terminal, t);
     const pane = p.pane;
     return h_flex()
       .id(`pane-head-${pane}`)
@@ -63,12 +73,12 @@ export default class MinimalistCompactPaneHeader extends View {
       .text_size(12)
       .on_hover((hovered, cx) => { this.hovered = hovered; cx.notify(); })
       .on_click(() => run("pane.focus", { pane }))
+      .when(status === "working", el => el.child(div().size(7).flex_none().rounded_full().bg(t.working)))
+      .when(status === "blocked", el => el.child(div().flex_none().px(6).h(18).flex().items_center().rounded(5).bg(t.blocked + "26").text_size(10.5).font_semibold().text_color(t.blocked).child("Needs you")))
+      .when(status === "done", el => el.child(div().size(7).flex_none().rounded(4).bg(t.done)))
       .when(Boolean(pic), (el) => el.child(pic))
       .child(div().flex_none().truncate().max_w(260).font_medium().text_color(t.foreground).child(name))
       .child(div().flex_1().truncate().text_color(t.dim).child(folder(p.cwd)))
-      .when(st === "working", el => el.child(div().size(7).flex_none().rounded_full().bg(t.working)))
-      .when(st === "blocked", el => el.child(div().flex_none().px(6).h(18).flex().items_center().rounded(5).bg(t.blocked + "26").text_size(10.5).font_semibold().text_color(t.blocked).child("Needs you")))
-      .when(st === "done", el => el.child(div().size(7).flex_none().rounded(4).bg(t.done)))
       .when(this.hovered, el => el
         .child(this.button(t, `ph-r-${pane}`, "split-right", "pane.split", { direction: "right", pane }))
         .child(this.button(t, `ph-d-${pane}`, "split-down", "pane.split", { direction: "down", pane }))

@@ -51,7 +51,7 @@
       "size": {
         "px": 330
       },
-      "min": 44,
+      "min": 220,
       "max": 480,
       "background": "chrome",
       "resizable": false
@@ -98,8 +98,8 @@
                     "width": 0,
                     "color": "border"
                   },
-                  "radius": 6,
-                  "gap": 5,
+                  "radius": 0,
+                  "gap": 0,
                   "lone": true
                 }
               }

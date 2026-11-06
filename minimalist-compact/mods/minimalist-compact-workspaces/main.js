@@ -26,7 +26,6 @@ function stateIcon(status, t, size = 11) {
 export default class MinimalistCompactWorkspaces extends Spaces {
   init(props, cx) {
     super.init(props, cx);
-    this.width = 320;
     this.bridge = new OpenCodeBridge();
     this.bridge.start(cx);
     this.screenshot = false;
@@ -109,7 +108,7 @@ export default class MinimalistCompactWorkspaces extends Spaces {
     return h_flex().id(`session-${row.address}-${row.id}`).h(32).pl(indent + 6).pr(4.5).gap(4).items_center().rounded(4)
       .when(row.focused, (el) => el.bg(t.raised)).hover((el) => el.bg(t.hover))
       .tooltip(`${title}\n${detail}`).on_click((_e, cx) => this.openSession(row, cx))
-      .on_mouse_down("right", () => openOverlay({ mod: "menu", kind: "popup", width: 200,
+      .on_mouse_down("right", () => openOverlay({ mod: "minimalist-compact-menu", kind: "popup", width: 200,
         props: { tab: "tab", target: { id: row.tab.id } } }))
       .child(div().w(12).flex_none().child(stateIcon(row.status, t)))
       .child(v_flex().flex_1().min_w(0).gap(0)
@@ -128,13 +127,6 @@ export default class MinimalistCompactWorkspaces extends Spaces {
       .child(this.spaceHeader(entry, t))
       .children(rows.map((row) => this.sessionRow(row, 0, t)))
       .child(div().h(1).flex_none().mx(5).my(3).bg(t.border));
-  }
-
-  compact(entry, t) {
-    return h_flex().id(`compact-${entry.w.id}`).h(24).justify_center().gap(3).items_center()
-      .when(entry.w.active, (el) => el.bg(t.selected)).tooltip(this.labels(entry).name)
-      .on_click(() => run("space.select", { id: entry.w.id }))
-      .child(div().text_color(t.muted).child(String(entry.i + 1)));
   }
 
   render(cx) {
@@ -156,14 +148,12 @@ export default class MinimalistCompactWorkspaces extends Spaces {
     const counts = { sessions: sessions.length, working: sessions.filter((row) => row.status === "working").length };
     const serialized = JSON.stringify(counts);
     if (shared("minimalist-compact.sessions") !== serialized) setShared("minimalist-compact.sessions", serialized);
-    const collapsed = this.width < 160;
     return v_flex().id("minimalist-compact-workspaces").size_full().min_h(0).bg(t.chrome)
-      .on_size_change((size, cx) => { this.width = size.width; cx.notify(); })
-      .child(h_flex().h(36).flex_none().pl(collapsed ? 4 : 16).pr(9).gap(6).items_center()
-        .when(!collapsed, (el) => el.child(div().flex_1().text_size(12.5).text_color(t.muted).child("Workspaces"))
-          .child(div().text_size(11.5).text_color(t.dim).child(`${counts.working} working`)))
+      .child(h_flex().h(36).flex_none().pl(16).pr(9).gap(6).items_center()
+        .child(div().flex_1().text_size(12.5).text_color(t.muted).child("Workspaces"))
+        .child(div().text_size(11.5).text_color(t.dim).child(`${counts.working} working`))
         .child(this.action("workspace-add", "plus", "New space", () => run("space.new"))))
-      .child(v_flex().id("workspace-scroll").flex_1().min_h(0).px(collapsed ? 0 : 8)
-        .overflow_y_scrollbar().children(this.grouped(t, collapsed)));
+      .child(v_flex().id("workspace-scroll").flex_1().min_h(0).px(8)
+        .overflow_y_scrollbar().children(this.grouped(t, false)));
   }
 }
