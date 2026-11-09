@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { frontend, snapshot, providerFamily, mostUrgent } from "./model.js";
+import { frontend, snapshot, providerFamily, mostUrgent, sessionStatus } from "./model.js";
 
 test("retained OSC status cannot resurrect OpenCode after its frontend exits", () => {
   const terminal = { address: "t17", state: "live", status: { app: "opencode", state: "working" },
@@ -36,4 +36,28 @@ test("optional bridge rejects missing, malformed, and stale-process snapshots", 
   assert.equal(snapshot({ ...value, sessions: [{ id: "broken" }] }, live), null);
   assert.equal(snapshot(value, live)?.sessions[1]?.model, "claude-opus");
   assert.equal(snapshot(value, live)?.sessions[1]?.active, false);
+});
+
+test("a single selected session retains Herdr unread completion until viewed", () => {
+  const selected = { active: true, status: "idle" };
+  assert.equal(sessionStatus(selected, "done", 1), "done");
+  assert.equal(sessionStatus(selected, "idle", 1), "idle");
+  assert.equal(sessionStatus(selected, undefined, 1), "idle");
+});
+
+test("a background tab finishing cannot mark the selected idle tab done", () => {
+  const selected = { active: true, status: "idle" };
+  const working = { active: false, status: "working" };
+  const finished = { ...working, status: "done" };
+  const states = (sessions, native) => sessions.map((session) => sessionStatus(session, native, sessions.length));
+  assert.deepEqual(states([selected, working], "working"), ["idle", "working"]);
+  assert.deepEqual(states([selected, finished], "done"), ["idle", "done"]);
+  assert.deepEqual(states([selected, { ...finished, status: "idle" }], "done"), ["idle", "idle"]);
+});
+
+test("native completion never replaces a session's working or blocked state", () => {
+  assert.equal(sessionStatus({ active: true, status: "working" }, "done", 1), "working");
+  assert.equal(sessionStatus({ active: true, status: "blocked" }, "done", 1), "blocked");
+  assert.equal(sessionStatus({ active: false, status: "idle" }, "done", 1), "idle");
+  assert.equal(sessionStatus({ active: false, status: "done" }, "idle", 2), "done");
 });

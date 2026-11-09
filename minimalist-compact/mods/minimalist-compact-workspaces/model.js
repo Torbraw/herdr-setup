@@ -66,3 +66,11 @@ export function mostUrgent(states) {
   const priority = ["blocked", "done", "working", "idle"];
   return priority.find((item) => states.includes(item)) ?? null;
 }
+
+/** Only a sole session can inherit terminal-wide unread completion unambiguously.
+ * @param {{active: boolean, status: Status}} session
+ * @param {Status | undefined} nativeStatus @param {number} sessionCount @returns {Status} */
+export function sessionStatus(session, nativeStatus, sessionCount) {
+  if (sessionCount === 1 && session.active && session.status === "idle" && nativeStatus === "done") return "done";
+  return session.status;
+}

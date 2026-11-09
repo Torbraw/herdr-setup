@@ -2,7 +2,7 @@ import { div, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { agents, terminals, panes, spaces, theme, run, openOverlay, setAgentOrder, shared, setShared, nextCommand } from "herdr";
 import Spaces from "./spaces-base.js";
-import { frontend, providerFamily } from "./model.js";
+import { frontend, providerFamily, sessionStatus } from "./model.js";
 import { OpenCodeBridge } from "./opencode-bridge.js";
 import { ScreenshotNames, screenshotMode } from "./screenshot.js";
 
@@ -52,6 +52,7 @@ export default class MinimalistCompactWorkspaces extends Spaces {
     if (!live) return [];
     const value = this.bridge.get(live);
     if (value) return value.sessions.map((session) => ({ ...session, kind: "session", address: live.address,
+      status: sessionStatus(session, this.agentsByAddress.get(live.address)?.status, value.sessions.length),
       harness: live.harness, tab, focused: pane.focused && session.active,
       target: { type: "session", pid: live.pid, sessionID: session.id } }));
     return this.nativeRow(pane, tab, live);
