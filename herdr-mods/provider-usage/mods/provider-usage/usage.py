@@ -1,8 +1,9 @@
 """Read subscription usage. Credentials stay in memory; stdout contains usage only.
 
 Uses existing logins, never refreshes or rewrites credentials. Network requests
-go only to the providers' usage endpoints, cached for two minutes by default
-unless the person explicitly requests fresh usage.
+go only to the providers' usage endpoints. Scheduled requests honor persisted
+rate-limit cooldowns; explicit refreshes can retry early. Caches contain parsed
+usage, capture times, cooldowns and one-way credential fingerprints, never tokens.
 """
 
 import argparse
@@ -12,21 +13,14 @@ import math
 import os
 import sqlite3
 import time
-import urllib.error
 import urllib.request
 from pathlib import Path
+from usage_cache import read_json, refresh_lock, write_json
+from usage_policy import fetch_usage, timestamp
 
 HOME = Path.home()
 APP = Path(os.environ.get("HERDR_APP_HOME", HOME / ".config/herdr-app"))
 CACHE = APP / "data/provider-usage.json"
-
-
-def read_json(path):
-    try:
-        value = json.loads(path.read_text())
-        return value if isinstance(value, dict) else {}
-    except (OSError, ValueError):
-        return {}
 
 
 def window(label, used, reset):
@@ -45,14 +39,16 @@ def request(url, token, headers):
     return value
 
 
-def openai():
+def openai_login():
     auth = opencode_login("openai")
     codex = read_json(HOME / ".codex/auth.json").get("tokens", {})
     token = codex.get("access_token") or auth.get("access")
     account = codex.get("account_id") or auth.get("accountId")
-    if not token:
-        return {"state": "unavailable", "message": "Sign in to Codex / OpenAI"}
     headers = {"ChatGPT-Account-Id": account} if account else {}
+    return token, headers
+
+
+def openai(token, headers):
     payload = request("https://chatgpt.com/backend-api/wham/usage", token, headers)
     limits = payload.get("rate_limit", {})
     windows = [openai_window(limits.get(key)) for key in ["primary_window", "secondary_window"]]
@@ -84,13 +80,13 @@ def openai_window(raw):
     return window(label, raw.get("used_percent"), raw.get("reset_at"))
 
 
-def anthropic():
+def anthropic_login():
     auth = read_json(HOME / ".claude/.credentials.json").get("claudeAiOauth", {})
-    token = auth.get("accessToken")
-    if not token:
-        return {"state": "unavailable", "message": "Sign in to Claude Code"}
-    payload = request("https://api.anthropic.com/api/oauth/usage", token,
-                      {"anthropic-beta": "oauth-2025-04-20"})
+    return auth.get("accessToken"), {"anthropic-beta": "oauth-2025-04-20"}
+
+
+def anthropic(token, headers):
+    payload = request("https://api.anthropic.com/api/oauth/usage", token, headers)
     windows = []
     for key, label in [("five_hour", "5h"), ("seven_day", "7d")]:
         raw = payload.get(key) or {}
@@ -105,33 +101,45 @@ def available(windows):
     return {"state": "ready", "windows": valid}
 
 
-def provider(name, fetch):
+def provider(name, login, fetch, previous, manual=False, poll=False, cache_seconds=120):
     try:
-        return {"provider": name, **fetch()}
-    except urllib.error.HTTPError as error:
-        messages = {401: "Login expired", 403: "Usage access denied", 429: "Rate limited; retry later"}
-        return {"provider": name, "state": "unavailable",
-                "message": messages.get(error.code, f"Provider error {error.code}")}
+        token, headers = login()
+        if not isinstance(token, str) or not token:
+            names = {"openai": "Codex / OpenAI", "anthropic": "Claude Code"}
+            return {"provider": name, "state": "unavailable", "message": f"Sign in to {names[name]}"}, {}
+        result, state = fetch_usage(token, headers, fetch, previous, manual, poll, cache_seconds)
+        return {"provider": name, **result}, state
     except (OSError, ValueError, TypeError):
-        return {"provider": name, "state": "unavailable", "message": "Usage temporarily unavailable"}
+        return {"provider": name, "state": "unavailable", "message": "Usage temporarily unavailable"}, {}
 
 
-def main(refresh=False, cache_seconds=120):
-    cached = read_json(CACHE)
-    if not refresh and cached.get("version") == 2 and time.time() - cached.get("updated", 0) < cache_seconds:
-        print(json.dumps(cached))
-        return
+def collect(previous, manual, poll, cache_seconds):
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        jobs = [pool.submit(provider, name, fetch) for name, fetch in
-                [("openai", openai), ("anthropic", anthropic)]]
-        rows = [job.result() for job in jobs]
-    result = {"version": 2, "updated": time.time(), "providers": rows}
-    CACHE.parent.mkdir(parents=True, exist_ok=True)
-    temporary = CACHE.with_suffix(".tmp")
-    temporary.write_text(json.dumps(result))
-    temporary.chmod(0o600)
-    temporary.replace(CACHE)
-    print(json.dumps(result))
+        jobs = {name: pool.submit(provider, name, login, fetch, previous.get(name), manual, poll, cache_seconds)
+                for name, login, fetch in [("openai", openai_login, openai),
+                                           ("anthropic", anthropic_login, anthropic)]}
+        results = {name: job.result() for name, job in jobs.items()}
+    rows = [row for row, _state in results.values()]
+    states = {name: state for name, (_row, state) in results.items()}
+    return rows, states
+
+
+def refresh_usage(refresh, poll, cache_seconds, started):
+    cached = read_json(CACHE)
+    completed = cached.get("_completed_ns")
+    coalesced = timestamp(completed) and completed >= started
+    previous = cached.get("_providers", {})
+    rows, states = collect(previous if isinstance(previous, dict) else {},
+                           refresh and not coalesced, poll and not coalesced, cache_seconds)
+    result = {"version": 3, "updated": time.time(), "providers": rows}
+    write_json(CACHE, {**result, "_providers": states, "_completed_ns": time.time_ns()})
+    return result
+
+
+def main(refresh=False, cache_seconds=120, poll=False):
+    started = time.time_ns()
+    with refresh_lock(CACHE.with_suffix(".lock")):
+        print(json.dumps(refresh_usage(refresh, poll, cache_seconds, started)))
 
 
 def positive_seconds(value):
@@ -143,7 +151,9 @@ def positive_seconds(value):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Read subscription usage without modifying logins.")
-    parser.add_argument("--refresh", action="store_true", help="Bypass the usage cache and reread current logins.")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--refresh", action="store_true", help="Explicit refresh: bypass usage cache and rate-limit cooldowns.")
+    mode.add_argument("--poll", action="store_true", help="Scheduled refresh: bypass usage cache but honor rate-limit cooldowns.")
     parser.add_argument("--cache-seconds", type=positive_seconds, default=120, help="Usage cache lifetime in seconds (default: 120).")
     args = parser.parse_args()
-    main(refresh=args.refresh, cache_seconds=args.cache_seconds)
+    main(refresh=args.refresh, cache_seconds=args.cache_seconds, poll=args.poll)

@@ -1,7 +1,7 @@
 // @ts-check
 /** @typedef {{label: string, used: number, reset: string | number | null}} UsageWindow */
 /** @typedef {"openai" | "anthropic"} ProviderID */
-/** @typedef {({state: "ready", windows: UsageWindow[]} | {state: "unavailable", message: string}) & {provider: ProviderID}} Provider */
+/** @typedef {({state: "ready", windows: UsageWindow[]} | {state: "stale", windows: UsageWindow[], updated: number, message: string} | {state: "unavailable", message: string}) & {provider: ProviderID}} Provider */
 
 /** @param {unknown} value @returns {value is Record<string, unknown>} */
 function record(value) {
@@ -23,10 +23,18 @@ function provider(value) {
   if (value.state === "unavailable" && typeof value.message === "string") {
     return { provider: id, state: "unavailable", message: value.message };
   }
-  if (value.state !== "ready" || !Array.isArray(value.windows)) return null;
+  if (!Array.isArray(value.windows)) return null;
   const windows = value.windows.map(usageWindow).filter((entry) => entry !== null);
   if (!windows.length) return null;
-  return { provider: id, state: "ready", windows };
+  if (value.state === "ready") return { provider: id, state: "ready", windows };
+  return staleProvider(value, id, windows);
+}
+
+/** @param {Record<string, unknown>} value @param {ProviderID} id @param {UsageWindow[]} windows @returns {Provider | null} */
+function staleProvider(value, id, windows) {
+  if (value.state !== "stale" || typeof value.message !== "string") return null;
+  if (typeof value.updated !== "number" || !Number.isFinite(value.updated)) return null;
+  return { provider: id, state: "stale", windows, updated: value.updated, message: value.message };
 }
 
 /** @param {unknown} value @returns {{providers: Provider[], updated: number} | null} */

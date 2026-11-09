@@ -20,3 +20,13 @@ test("both provider reset formats work; absent resets never show a fake date", (
   assert.equal(resetLabel(null, now), "");
   assert.equal(resetLabel("invalid", now), "");
 });
+
+test("last-known usage retains its capture time and diagnostic, never masquerades as fresh", () => {
+  const row = { provider: "anthropic", state: "stale", updated: 100, message: "Rate limited; retry later",
+    windows: [{ label: "5h", used: 42, reset: null }] };
+  assert.deepEqual(parseUsage({ updated: 200, providers: [row] }), { updated: 200, providers: [row] });
+  for (const updated of [undefined, "100", Infinity, NaN]) {
+    assert.deepEqual(parseUsage({ updated: 200, providers: [{ ...row, updated }] })?.providers, []);
+  }
+  assert.deepEqual(parseUsage({ updated: 200, providers: [{ ...row, message: undefined }] })?.providers, []);
+});

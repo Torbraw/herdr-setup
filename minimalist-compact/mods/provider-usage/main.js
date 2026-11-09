@@ -9,23 +9,23 @@ export default class ProviderUsage extends View {
     this.rows = [];
     this.width = 320;
     this.refresh(cx);
-    // Fetch fresh on each tick: request latency can leave the previous cache just under its TTL.
-    cx.timer.every(refreshIntervalSeconds * 1000, (cx) => this.refresh(cx, true));
+    cx.timer.every(refreshIntervalSeconds * 1000, (cx) => this.refresh(cx, "poll"));
     cx.spawn(async (cx) => {
       for (;;) {
-        if (await nextCommand() === "refresh") this.refresh(cx, true);
+        if (await nextCommand() === "refresh") this.refresh(cx, "manual");
       }
     });
   }
 
-  refresh(cx, fresh = false) {
+  refresh(cx, mode = "cached") {
     if (this.busy) return;
     this.busy = true;
     cx.notify();
     cx.spawn(async (cx) => {
       try {
         const args = [`${appHome()}/mods/provider-usage/usage.py`, "--cache-seconds", String(refreshIntervalSeconds)];
-        if (fresh) args.push("--refresh");
+        if (mode === "manual") args.push("--refresh");
+        if (mode === "poll") args.push("--poll");
         const result = await exec("python3", args);
         if (result.code !== 0) throw new Error("Usage unavailable");
         const data = parseUsage(JSON.parse(result.stdout));
@@ -54,15 +54,25 @@ export default class ProviderUsage extends View {
   provider(row, t) {
     const name = row.provider === "openai" ? "Codex" : "Claude";
     return h_flex().gap(8).items_start()
+      .when(row.state === "stale", (el) => el.tooltip(
+        `Last known · ${row.message}; captured ${new Date(row.updated * 1000).toLocaleString()}`))
       .child(h_flex().w(64).h(17).flex_none().gap(6).items_center().text_size(12.5).text_color(t.muted)
         .child(svg(`mods/provider-usage/${row.provider}.svg`).size(13).flex_none())
-        .child(name))
-      .when(row.state === "ready", (el) => el.child(v_flex().flex_1().min_w(0).children(row.windows.map((window) => this.meter(window, t)))))
-      .when(row.state !== "ready", (el) => el.child(div().flex_1().min_w(0).truncate().text_size(11.5).text_color(t.dim).tooltip(row.message).child(row.message)));
+        .child(row.state === "stale" ? `${name}*` : name))
+      .child(this.providerUsage(row, t));
+  }
+
+  providerUsage(row, t) {
+    if (row.state === "unavailable") {
+      return div().flex_1().min_w(0).truncate().text_size(11.5).text_color(t.dim).tooltip(row.message).child(row.message);
+    }
+    return v_flex().flex_1().min_w(0)
+      .children(row.windows.map((window) => this.meter(window, t)));
   }
 
   render() {
     const t = theme();
+    const lastKnown = this.rows.some((row) => row.state === "stale");
     if (this.width < 160) return div().id("usage-rail").size_full()
       .on_size_change((size, cx) => { this.width = size.width; cx.notify(); });
     return v_flex().id("provider-usage").size_full().px(16).pt(6).pb(8).gap(6).bg(t.chrome)
@@ -70,7 +80,7 @@ export default class ProviderUsage extends View {
       .on_size_change((size, cx) => { this.width = size.width; cx.notify(); })
       .child(h_flex().justify_between().items_center().text_size(11.5).text_color(t.dim)
         .child("Subscription usage")
-        .child(this.busy ? "Checking…" : "% used"))
+        .child(this.busy ? "Checking…" : lastKnown ? "Last known*" : "% used"))
       .children(this.rows.map((row) => this.provider(row, t)))
       .when(Boolean(this.error), (el) => el.child(div().text_size(12).text_color(t.dim).child(this.error)));
   }

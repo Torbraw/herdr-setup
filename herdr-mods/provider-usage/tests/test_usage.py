@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "mods/provider-usage"))
 import usage
+from usage_policy import scoped_state
 
 
 class UsageTests(unittest.TestCase):
@@ -24,26 +25,33 @@ class UsageTests(unittest.TestCase):
             with self.subTest(age=age, options=options), \
                     tempfile.TemporaryDirectory(dir="/tmp/opencode") as directory:
                 cache = Path(directory) / "usage.json"
-                cached = {"version": 2, "updated": 1000 - age, "providers": []}
+                unavailable = {"state": "unavailable", "message": "Not signed in"}
+                state = {**scoped_state({}, "fixture", {}), "checked": 1000 - age, "result": unavailable}
+                cached = {"version": 2, "updated": 1000 - age, "providers": [],
+                          "_providers": {name: state for name in ["openai", "anthropic"]}}
                 cache.write_text(json.dumps(cached))
                 output = io.StringIO()
-                unavailable = {"state": "unavailable", "message": "Not signed in"}
                 with patch.object(usage, "CACHE", cache), patch.object(usage.time, "time", return_value=1000), \
+                        patch.object(usage, "openai_login", return_value=("fixture", {})), \
+                        patch.object(usage, "anthropic_login", return_value=("fixture", {})), \
                         patch.object(usage, "openai", return_value=unavailable) as openai, \
                         patch.object(usage, "anthropic", return_value=unavailable) as anthropic, \
                         contextlib.redirect_stdout(output):
                     usage.main(**options)
                 result = json.loads(output.getvalue())
                 if expired:
-                    openai.assert_called_once_with()
-                    anthropic.assert_called_once_with()
+                    openai.assert_called_once_with("fixture", {})
+                    anthropic.assert_called_once_with("fixture", {})
                     self.assertEqual(result["updated"], 1000)
                     self.assertEqual(len(result["providers"]), 2)
                 else:
                     openai.assert_not_called()
                     anthropic.assert_not_called()
-                    self.assertEqual(result, cached)
-                self.assertEqual(json.loads(cache.read_text()), result)
+                    self.assertEqual(result["providers"], [{"provider": name, **unavailable}
+                                                         for name in ["openai", "anthropic"]])
+                persisted = json.loads(cache.read_text())
+                self.assertEqual(persisted["providers"], result["providers"])
+                self.assertNotIn("_providers", result)
 
     def test_manual_refresh_bypasses_cached_login_error_and_reads_new_credentials(self):
         with tempfile.TemporaryDirectory(dir="/tmp/opencode") as directory:
@@ -51,6 +59,9 @@ class UsageTests(unittest.TestCase):
             cache = home / "usage.json"
             cached = {"version": 2, "updated": time.time(), "providers": [
                 {"provider": "anthropic", "state": "unavailable", "message": "Login expired"}]}
+            state = {**scoped_state({}, "new-login-fixture", {"anthropic-beta": "oauth-2025-04-20"}),
+                     "checked": time.time(), "result": {"state": "unavailable", "message": "Login expired"}}
+            cached["_providers"] = {"anthropic": state}
             cache.write_text(json.dumps(cached))
             credentials = home / ".claude/.credentials.json"
             credentials.parent.mkdir()
@@ -58,11 +69,12 @@ class UsageTests(unittest.TestCase):
             payload = {"five_hour": {"utilization": 12, "resets_at": None}}
             output = io.StringIO()
             with patch.object(usage, "HOME", home), patch.object(usage, "CACHE", cache), \
+                    patch.object(usage, "openai_login", return_value=("fixture", {})), \
                     patch.object(usage, "openai", return_value={"state": "unavailable", "message": "Not signed in"}), \
                     patch.object(usage, "request", return_value=payload) as request:
                 with contextlib.redirect_stdout(output):
                     usage.main()
-                self.assertEqual(json.loads(output.getvalue()), cached)
+                self.assertEqual(json.loads(output.getvalue())["providers"][1], cached["providers"][0])
                 request.assert_not_called()
                 output = io.StringIO()
                 with contextlib.redirect_stdout(output):
@@ -73,7 +85,7 @@ class UsageTests(unittest.TestCase):
             claude = next(row for row in result["providers"] if row["provider"] == "anthropic")
             self.assertEqual(claude["state"], "ready")
             self.assertEqual(claude["windows"][0]["used"], 12)
-            self.assertEqual(json.loads(cache.read_text()), result)
+            self.assertEqual(json.loads(cache.read_text())["providers"], result["providers"])
             self.assertEqual(credentials.read_text(), json.dumps({"claudeAiOauth": {"accessToken": "new-login-fixture"}}))
             self.assertNotIn("new-login-fixture", cache.read_text())
 
@@ -93,17 +105,15 @@ class UsageTests(unittest.TestCase):
     def test_openai_reports_actual_windows_without_fabricating_a_five_hour_limit(self):
         payload = {"rate_limit": {"primary_window": {
             "limit_window_seconds": 604800, "used_percent": 11, "reset_at": 1234}}}
-        with patch.object(usage, "opencode_login", return_value={"access": "fixture"}), \
-                patch.object(usage, "read_json", return_value={}), \
-                patch.object(usage, "request", return_value=payload):
-            result = usage.openai()
+        with patch.object(usage, "request", return_value=payload):
+            result = usage.openai("fixture", {})
         self.assertEqual(result, {"state": "ready", "windows": [
             {"label": "7d", "used": 11, "reset": 1234}]})
 
     def test_provider_errors_never_echo_credentials_or_response_bodies(self):
-        def unavailable():
+        def unavailable(_token, _headers):
             raise urllib.error.HTTPError("https://example.test", 401, "private-response", {}, None)
-        result = usage.provider("openai", unavailable)
+        result, _state = usage.provider("openai", lambda: ("fixture", {}), unavailable, {})
         self.assertEqual(result, {"provider": "openai", "state": "unavailable", "message": "Login expired"})
 
 

@@ -27,6 +27,8 @@ Only the inner runtime folder is installed; docs, preview and tests stay here. I
 
 Usage refreshes every two minutes by default. Set `refreshIntervalSeconds` to a positive whole number in `mods/provider-usage/config.js` to change both polling and cache lifetime. Herdr hot-reloads the file on save. When developing in this repo, edit the standalone source and use `node scripts/dev.mjs` from the root to sync it live.
 
+Rate-limited providers pause background requests until `Retry-After`, or for five minutes when that header is unusable. Cooldowns survive reloads; other providers continue refreshing. Last-good readings remain starred beside the provider name, with a “Last known*” heading and a tooltip showing the reason and original capture time. The `provider-usage.refresh` command explicitly retries even during a cooldown; avoid repeatedly forcing it while rate-limited.
+
 ## Development
 
 Edit `mods/provider-usage/`. Run tests from this bundle directory:

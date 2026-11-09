@@ -29,7 +29,7 @@ Install [herdr-app-bridge](https://github.com/Torbraw/opencode-herdr-app-bridge)
 
 - Workspace discovery invokes Git and `hc`; inherited Herdr controls can launch terminals and manage spaces/worktrees.
 - Usage runs `python3` every two minutes by default; `refreshIntervalSeconds` in `mods/provider-usage/config.js` controls polling and cache lifetime. Saving the file hot-reloads the mod. It reads existing Codex/OpenCode and Claude Code logins, including OpenCode's local credential database when available, and contacts `chatgpt.com/backend-api/wham/usage` and `api.anthropic.com/api/oauth/usage`.
-- Credentials remain local; the usage cache contains only usage information. Missing/expired logins display an unavailable state. Provider endpoints and login formats may change.
+- Credentials remain local; the usage cache contains parsed usage, capture times, cooldowns and one-way credential fingerprints, never tokens or raw responses. Rate-limited providers honor `Retry-After` or pause five minutes; temporary failures retain readings marked “Last known”. Explicit usage refresh can retry early. Missing/expired logins display an unavailable state. Provider endpoints and login formats may change.
 - The optional bridge exchanges local session metadata through Herdr's `data/herdr-app-bridge` directory.
 
 ## Screenshot mode
