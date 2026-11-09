@@ -66,12 +66,3 @@ export function mostUrgent(states) {
   const priority = ["blocked", "done", "working", "idle"];
   return priority.find((item) => states.includes(item)) ?? null;
 }
-
-/** OpenCode can mark its selected tab viewed while its Herdr terminal is hidden.
- * Herdr owns terminal-level unread completion; never copy it to background tabs.
- * @param {{active: boolean, status: Status}} session
- * @param {Status | undefined} nativeStatus @returns {Status} */
-export function sessionStatus(session, nativeStatus) {
-  if (session.active && session.status === "idle" && nativeStatus === "done") return "done";
-  return session.status;
-}

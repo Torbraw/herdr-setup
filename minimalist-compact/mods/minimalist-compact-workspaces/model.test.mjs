@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { frontend, snapshot, providerFamily, mostUrgent, sessionStatus } from "./model.js";
+import { frontend, snapshot, providerFamily, mostUrgent } from "./model.js";
 
 test("retained OSC status cannot resurrect OpenCode after its frontend exits", () => {
   const terminal = { address: "t17", state: "live", status: { app: "opencode", state: "working" },
@@ -36,15 +36,4 @@ test("optional bridge rejects missing, malformed, and stale-process snapshots", 
   assert.equal(snapshot({ ...value, sessions: [{ id: "broken" }] }, live), null);
   assert.equal(snapshot(value, live)?.sessions[1]?.model, "claude-opus");
   assert.equal(snapshot(value, live)?.sessions[1]?.active, false);
-});
-
-test("Herdr unread completion survives OpenCode marking its selected tab viewed", () => {
-  const selected = { active: true, status: "idle" };
-  assert.equal(sessionStatus(selected, "done"), "done");
-  assert.equal(sessionStatus(selected, "idle"), "idle");
-  assert.equal(sessionStatus(selected, undefined), "idle");
-  assert.equal(sessionStatus({ ...selected, active: false }, "done"), "idle");
-  assert.equal(sessionStatus({ ...selected, status: "working" }, "done"), "working");
-  assert.equal(sessionStatus({ ...selected, status: "blocked" }, "done"), "blocked");
-  assert.equal(sessionStatus({ active: false, status: "done" }, "idle"), "done");
 });

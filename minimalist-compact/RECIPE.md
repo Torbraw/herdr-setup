@@ -17,7 +17,7 @@ A compact coding workspace for Herdr: worktrees grouped under repositories, Open
 ## How it behaves
 
 - Working: static theme-working dot. Waiting for input/blocked: red (`ansi1`). Done/unread: blue (`ansi4`). Idle: hollow subdued dot. Status text is available in tooltips only on session rows.
-- An agent finishing while unseen uses Herdr's native unread completion for the active OpenCode tab when plugin metadata reports idle; viewing it lets Herdr clear completion. Background OpenCode tabs retain their own status.
+- OpenCode tabs use only their own bridge status. Herdr's terminal-wide unread completion cannot identify which tab finished and is used only for native agent rows without bridge metadata.
 - Clicking a workspace selects its space; right-click opens its layout-owned menu. Clicking a session focuses its terminal and, with the companion plugin, its specific OpenCode tab. Session/tab right-click opens the containing Herdr tab's menu. These menus retain tab/worktree actions but omit Rename; double-clicking a tab only selects it. Native rename commands remain available.
 - Worktrees are grouped under their main checkout via Git metadata. Names/branches follow live folders; ordinary shell panes are omitted from session rows. Agent cycling follows the displayed session order.
 - OpenCode tab closing uses OpenCode itself: Ctrl+X then W with its default bindings.
