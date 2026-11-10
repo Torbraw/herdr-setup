@@ -48,7 +48,7 @@ export default class ProviderUsage extends View {
       .child(div().flex_1().h(3).rounded_full().bg(t.border)
         .child(div().w(`${window.used}%`).h(3).rounded_full().bg(color)))
       .child(div().w(31).flex_none().text_right().text_color(t.muted).child(`${Math.round(window.used)}%`))
-      .child(div().w(24).flex_none().text_right().child(reset));
+      .child(div().w(32).flex_none().whitespace_nowrap().text_right().child(reset));
   }
 
   provider(row, t) {
