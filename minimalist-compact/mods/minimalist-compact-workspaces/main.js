@@ -91,7 +91,7 @@ export default class MinimalistCompactWorkspaces extends Spaces {
     return h_flex().id(`workspace-${w.id}`).h(24).px(5).gap(6).items_center().rounded(4)
       .when(w.active, (el) => el.bg(t.selected)).hover((el) => el.bg(t.hover))
       .on_click(() => run("space.select", { id: w.id })).on_mouse_down("right", () => this.menu(w))
-      .child(svg(`mods/workspace-chrome/${tree ? "branch" : "folder"}.svg`).size(12).flex_none().text_color(t.muted))
+      .child(svg(tree ? "mods/workspace-chrome/branch.svg" : "mods/minimalist-compact-workspaces/workspace.svg").size(12).flex_none().text_color(t.muted))
       .child(div().max_w(150).min_w(0).truncate().font_semibold().text_size(13).text_color(t.foreground)
         .tooltip([folder, branch ? `Branch: ${branch}` : ""].filter(Boolean).join("\n")).child(name))
       .when(Boolean(branch) && branch !== name, (el) => el.child(
