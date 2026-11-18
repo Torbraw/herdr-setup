@@ -19,6 +19,7 @@ A compact coding workspace for Herdr: worktrees grouped under repositories, Open
 - Working: static theme-working dot. Waiting for input/blocked: red (`ansi1`). Done/unread: blue (`ansi4`). Idle: hollow subdued dot. Status text is available in tooltips only on session rows.
 - A sole selected OpenCode tab inherits Herdr's unread completion when bridge metadata reports idle; viewing it lets Herdr clear completion. With multiple OpenCode tabs, each uses only its own bridge status because terminal-wide completion cannot identify which tab finished. Native agent rows use Herdr's status directly.
 - Clicking a workspace selects its space; right-click opens its layout-owned menu. Clicking a session focuses its terminal and, with the companion plugin, its specific OpenCode tab. Session/tab right-click opens the containing Herdr tab's menu. These menus retain tab/worktree actions but omit Rename; double-clicking a tab only selects it. Native rename commands remain available.
+- Remove worktree uses a one-line bottom-right confirmation/progress strip, with an extra line only for warnings or errors. It keeps the branch, checks for newly uncommitted changes and unpushed submodule commits before deletion, and leaves the workspace usable. New/Open worktree keep their centered dialogs.
 - Worktrees are grouped under their main checkout via Git metadata. Names/branches follow live folders; ordinary shell panes are omitted from session rows. Agent cycling follows the displayed session order.
 - OpenCode tab closing uses OpenCode itself: Ctrl+X then W with its default bindings.
 - Usage refreshes automatically every two minutes by default; `mods/provider-usage/config.js` controls both polling and cache lifetime and hot-reloads on save. The bundled `keys.json` adds Ctrl+Shift+R for `provider-usage.refresh`, bypassing the usage cache and rereading current logins. Merge that fragment into existing Herdr keys; preserve unrelated bindings. Missing logins or errors show concise unavailable messages.
@@ -39,6 +40,7 @@ Layout mods:
 - `minimalist-compact-pane-header`: pane titles, folders and split/zoom/close controls using `props.pane`.
 - `minimalist-compact-session-status`: native workspace/branch summary and custom session/working counts.
 - `minimalist-compact-menu`: workspace/tab menus, validated targets and native worktree dialogs, without Rename.
+- `minimalist-compact-worktree-remove`: content-sized removal confirmation/progress floating at the bottom-right, with Git data-loss safeguards.
 
 The mods use gpui-kit/gpui-base and Herdr's live `spaces`, `panes`, `agents`, `terminals`, `theme`, `shared`, `run`, overlays, `exec`, `hc`, file APIs and folder watchers. The inherited spaces implementation handles Git grouping and remote machines. Only foreground coding-agent processes qualify, so stale OSC state cannot resurrect exited agents.
 

@@ -1,7 +1,7 @@
 // Layout-only workspace/tab menus. Shipped terminal menus remain untouched.
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { run, props, closeOverlay, openOverlay, theme, spaces, panes, exec, keys } from "herdr";
+import { run, props, closeOverlay, openOverlay, theme, spaces, panes, exec, keys, setShared } from "herdr";
 import { menuTarget, menuItems } from "./model.js";
 
 function place(space) {
@@ -20,6 +20,18 @@ function shortcut(item) {
   if (item.kind !== "command") return "";
   const binding = keys().find((binding) => binding.section === "global" && binding.action === item.command);
   return binding?.keys ?? "";
+}
+
+/** Removal uses the layout's content-sized status strip; other worktree dialogs stay native.
+ * @param {Extract<import("./model.js").MenuItem, { kind: "worktree" }>} item */
+function worktreeOverlay(item) {
+  const props = { space: item.space, action: item.action };
+  if (item.action === "remove") {
+    setShared("minimalist-compact.remove-worktree", item.space);
+    return run("minimalist-compact-worktree-remove.start");
+  }
+  return openOverlay({ mod: "worktree", kind: "dialog",
+    ...(item.action === "open" ? { width: 560, height: 480 } : { width: 440, height: 260 }), props });
 }
 
 export default class MinimalistCompactMenu extends View {
@@ -43,9 +55,7 @@ export default class MinimalistCompactMenu extends View {
     if (!item) return;
     closeOverlay(props()?.overlay);
     if (item.kind === "command") run(item.command, item.args);
-    else openOverlay({ mod: "worktree", kind: "dialog",
-      ...(item.action === "open" ? { width: 560, height: 480 } : { width: 440, height: 260 }),
-      props: { space: item.space, action: item.action } });
+    else worktreeOverlay(item);
   }
 
   key(e, cx, count) {

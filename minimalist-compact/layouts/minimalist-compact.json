@@ -6,6 +6,14 @@
   },
   "type": "row",
   "preview": "layouts/minimalist-compact.png",
+  "floating": [
+    {
+      "id": "worktree-removal",
+      "content": { "mod": "minimalist-compact-worktree-remove" },
+      "edge": "bottom",
+      "align": "end"
+    }
+  ],
   "children": [
     {
       "id": "sidebar",
