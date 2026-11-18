@@ -23,6 +23,10 @@ APP = Path(os.environ.get("HERDR_APP_HOME", HOME / ".config/herdr-app"))
 CACHE = APP / "data/provider-usage.json"
 
 
+class ExpiredLoginError(Exception):
+    """The owning client must renew its login; this helper never refreshes tokens."""
+
+
 def window(label, used, reset):
     if not isinstance(used, (int, float)) or not math.isfinite(used):
         return None
@@ -82,6 +86,9 @@ def openai_window(raw):
 
 def anthropic_login():
     auth = read_json(HOME / ".claude/.credentials.json").get("claudeAiOauth", {})
+    expires = auth.get("expiresAt")
+    if auth.get("accessToken") and timestamp(expires) and expires <= time.time() * 1000:
+        raise ExpiredLoginError
     return auth.get("accessToken"), {"anthropic-beta": "oauth-2025-04-20"}
 
 
@@ -109,6 +116,8 @@ def provider(name, login, fetch, previous, manual=False, poll=False, cache_secon
             return {"provider": name, "state": "unavailable", "message": f"Sign in to {names[name]}"}, {}
         result, state = fetch_usage(token, headers, fetch, previous, manual, poll, cache_seconds)
         return {"provider": name, **result}, state
+    except ExpiredLoginError:
+        return {"provider": name, "state": "unavailable", "message": "Refresh Claude Code login"}, {}
     except (OSError, ValueError, TypeError):
         return {"provider": name, "state": "unavailable", "message": "Usage temporarily unavailable"}, {}
 

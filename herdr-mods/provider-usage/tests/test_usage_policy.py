@@ -166,6 +166,34 @@ class RateLimitTests(unittest.TestCase):
         self.assertEqual(result["state"], "unavailable")
         self.assertEqual(json.loads(self.cache.read_text())["_providers"]["anthropic"], {})
 
+    def test_expired_claude_login_stops_requests_and_overrides_old_rate_limit(self):
+        self.request.side_effect = limited("1800")
+        self.run_usage(poll=True)
+        credentials = json.dumps({"claudeAiOauth": {
+            "accessToken": "private-fixture", "expiresAt": 999_000}})
+        self.credentials.write_text(credentials)
+        self.request.reset_mock()
+        for options in [{}, {"poll": True}, {"refresh": True}]:
+            with self.subTest(options=options):
+                result = self.run_usage(**options)
+                self.assertEqual(result, {"provider": "anthropic", "state": "unavailable",
+                                          "message": "Refresh Claude Code login"})
+        self.request.assert_not_called()
+        self.assertEqual(self.credentials.read_text(), credentials)
+        self.assertEqual(json.loads(self.cache.read_text())["_providers"]["anthropic"], {})
+
+    def test_renewed_claude_login_recovers_without_waiting_for_old_cooldown(self):
+        self.request.side_effect = limited("1800")
+        self.run_usage(poll=True)
+        self.credentials.write_text(json.dumps({"claudeAiOauth": {
+            "accessToken": "renewed-fixture", "expiresAt": 1_100_000}}))
+        self.request.reset_mock()
+        self.request.side_effect = None
+        result = self.run_usage(poll=True)
+        self.request.assert_called_once()
+        self.assertEqual(result["state"], "ready")
+        self.assertNotIn("retry_at", json.loads(self.cache.read_text())["_providers"]["anthropic"])
+
 
 if __name__ == "__main__":
     unittest.main()
